@@ -1,0 +1,94 @@
+graph TB
+    subgraph Enums["Enums"]
+        Symbol["<<enum>><br/>Symbol<br/>---<br/>X<br/>O<br/>EMPTY"]
+    end
+
+    subgraph Interfaces["Interfaces"]
+        BoardGames["<<interface>><br/>BoardGames<br/>---<br/>+ play(): void"]
+        PlayerStrategy["<<interface>><br/>PlayerStrategy<br/>---<br/>+ makeMove(Board): Position"]
+        GameState["<<interface>><br/>GameState<br/>---<br/>+ next(Context, Player, bool): void<br/>+ isGameOver(): boolean"]
+    end
+
+    subgraph Utils["Utility Classes"]
+        Position["Position<br/>---<br/>+ row: int<br/>+ col: int<br/>---<br/>+ Position(int, int)<br/>+ toString(): String"]
+        
+        Player["Player<br/>---<br/>- symbol: Symbol<br/>- playerStrategy: PlayerStrategy<br/>---<br/>+ Player(Symbol, Strategy)<br/>+ getSymbol(): Symbol<br/>+ getPlayerStrategy(): Strategy"]
+        
+        Board["Board<br/>---<br/>- rows: int<br/>- cols: int<br/>- grid: Symbol[][]<br/>---<br/>+ Board(int, int)<br/>+ isValidMove(Position): boolean<br/>+ makeMove(Position, Symbol): void<br/>+ checkGameState(Context, Player): void<br/>+ printBoard(): void<br/>- isBoardFull(): boolean<br/>- isWinningLine(Symbol[]): boolean<br/>- printSeparator(): void"]
+    end
+
+    subgraph Controller["Game Controller"]
+        TicTacToeGame["TicTacToeGame<br/>implements BoardGames<br/>---<br/>- board: Board<br/>- playerX: Player<br/>- playerO: Player<br/>- currentPlayer: Player<br/>- gameContext: GameContext<br/>---<br/>+ TicTacToeGame(Strategy, Strategy, int, int)<br/>+ play(): void<br/>- switchPlayer(): void<br/>- announceResult(): void"]
+    end
+
+    subgraph StatePattern["State Pattern - Game States"]
+        GameContext["GameContext<br/>---<br/>- currentGameState: GameState<br/>---<br/>+ GameContext()<br/>+ getCurrentGameState(): GameState<br/>+ setCurrentGameState(GameState): void<br/>+ next(Player, boolean): void<br/>+ isGameOver(): boolean"]
+        
+        XTurnState["XTurnState<br/>implements GameState<br/>---<br/>+ next(Context, Player, bool): void<br/>+ isGameOver(): boolean"]
+        
+        OTurnState["OTurnState<br/>implements GameState<br/>---<br/>+ next(Context, Player, bool): void<br/>+ isGameOver(): boolean"]
+        
+        XWonState["XWonState<br/>implements GameState<br/>---<br/>+ next(Context, Player, bool): void<br/>+ isGameOver(): boolean"]
+        
+        OWonState["OWonState<br/>implements GameState<br/>---<br/>+ next(Context, Player, bool): void<br/>+ isGameOver(): boolean"]
+        
+        DrawState["DrawState<br/>implements GameState<br/>---<br/>+ next(Context, Player, bool): void<br/>+ isGameOver(): boolean"]
+    end
+
+    subgraph StrategyPattern["Strategy Pattern - Player Strategies"]
+        HumanPlayerStrategy["HumanPlayerStrategy<br/>implements PlayerStrategy<br/>---<br/>- playerName: String<br/>- scanner: Scanner<br/>---<br/>+ HumanPlayerStrategy(String)<br/>+ makeMove(Board): Position"]
+    end
+
+    %% Relationships
+    TicTacToeGame -->|uses| Board
+    TicTacToeGame -->|has 2| Player
+    TicTacToeGame -->|uses| GameContext
+    TicTacToeGame -->|implements| BoardGames
+    
+    Player -->|has| PlayerStrategy
+    Player -->|uses| Symbol
+    
+    Board -->|uses| Symbol
+    Board -->|uses| Position
+    Board -->|calls| GameContext
+    
+    GameContext -->|manages| GameState
+    GameContext -->|transitions to| XTurnState
+    GameContext -->|transitions to| OTurnState
+    GameContext -->|transitions to| XWonState
+    GameContext -->|transitions to| OWonState
+    GameContext -->|transitions to| DrawState
+    
+    XTurnState -->|implements| GameState
+    OTurnState -->|implements| GameState
+    XWonState -->|implements| GameState
+    OWonState -->|implements| GameState
+    DrawState -->|implements| GameState
+    
+    HumanPlayerStrategy -->|implements| PlayerStrategy
+    HumanPlayerStrategy -->|uses| Position
+    HumanPlayerStrategy -->|validates with| Board
+    
+    %% State Transitions
+    XTurnState -.->|if not won| OTurnState
+    OTurnState -.->|if not won| XTurnState
+    XTurnState -.->|if X wins| XWonState
+    OTurnState -.->|if O wins| OWonState
+    XTurnState -.->|if board full| DrawState
+    OTurnState -.->|if board full| DrawState
+
+    style Symbol fill:#e1f5ff
+    style BoardGames fill:#f3e5f5
+    style PlayerStrategy fill:#f3e5f5
+    style GameState fill:#f3e5f5
+    style Position fill:#e8f5e9
+    style Player fill:#e8f5e9
+    style Board fill:#e8f5e9
+    style TicTacToeGame fill:#fff3e0
+    style GameContext fill:#fce4ec
+    style XTurnState fill:#fce4ec
+    style OTurnState fill:#fce4ec
+    style XWonState fill:#fce4ec
+    style OWonState fill:#fce4ec
+    style DrawState fill:#fce4ec
+    style HumanPlayerStrategy fill:#f1f8e9
