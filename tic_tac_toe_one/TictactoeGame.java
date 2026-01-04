@@ -7,6 +7,11 @@ interface Observer {
     void notify(String msg);
 }
 
+interface Subject {
+    void notify(String msg);
+    void subscribe(Observer observer);
+    void unsubscribe(Observer observer);
+}
 // concrete notifier.
 class ConsoleNotifier implements Observer {
 
@@ -158,7 +163,8 @@ class HumanPlayerStrategy implements PlayerStrategy {
     public Position makeMove(Board board) {
         while (true) {
             try {
-                System.out.print("Enter your move : row[0-2] , col[0-2] : ");
+                System.out.print(
+                        "Enter your move : row[0- " + board.getSize() + " ] , col[0- " + board.getSize() + "] : ");
                 int row = scanner.nextInt();
                 int col = scanner.nextInt();
 
@@ -327,13 +333,13 @@ class RulesProcessor {
 
 }
 
-interface Boardgames {
-
+interface Boardgame {
     void play();
-
 }
 
-class TicTacToe implements Boardgames {
+
+
+class TicTacToe implements Boardgame, Subject {
 
     private Board board;
     private RulesProcessor rules;
@@ -362,7 +368,7 @@ class TicTacToe implements Boardgames {
         return players;
     }
 
-    public ArrayList<Observer> laodObservers() {
+    public ArrayList<Observer> loadObservers() {
         Observer observer = new ConsoleNotifier();
         ArrayList<Observer> observers = new ArrayList<>();
         observers.add(observer);
@@ -378,18 +384,14 @@ class TicTacToe implements Boardgames {
         this.players.addAll(players);
     }
 
-    public void addNotifier(Observer notifier) {
+    @Override
+    public void subscribe(Observer notifier) {
         observers.add(notifier);
     }
 
-    public void addNotifier(ArrayList<Observer> notifiers) {
-        observers.addAll(notifiers);
-    }
-
-    public RulesProcessor loadRules() {
-        RulesStrategy strategy = new StandardRulesStrategy();
-        RulesProcessor rules = new RulesProcessor(strategy);
-        return rules;
+    @Override
+    public void unsubscribe(Observer observer) {
+        observers.remove(observer);
     }
 
     public void addRules(RulesProcessor rules) {
@@ -431,12 +433,12 @@ class TicTacToe implements Boardgames {
 
     }
 
-    void notify(String msg) {
+    @Override
+    public void notify(String msg) {
         for (Observer observer : observers) {
             observer.notify(msg);
         }
     }
-
 }
 
 public class TictactoeGame {
@@ -453,14 +455,12 @@ public class TictactoeGame {
             TicTacToe game = new TicTacToe(size);
 
             // load players.
-            Deque<PlayerProcessor> players = game.loadPlayers();
-            game.addPlayer(players);
+            game.addPlayer(game.loadPlayers());
 
-            // load observer
-            game.addNotifier(game.laodObservers());
-
-            // add the rules.
-            // game.addRules(game.loadRules());
+            // load observers
+            for (Observer observer : game.loadObservers()) {
+                game.subscribe(observer);
+            }
 
             // play game.
             game.play();
